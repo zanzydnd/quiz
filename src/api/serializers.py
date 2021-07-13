@@ -24,6 +24,9 @@ class QuestionSerializer(serializers.ModelSerializer):
         for answ in validated_data['answer']:
             answer_object = QuestionAnswer(text=answ['text'], is_right=answ['is_right'], question=object)
             answer_object.save()
+        if validated_data['quiz_id']:
+            object.quiz.add(validated_data['quiz_id'])
+            object.save()
         return object
 
     class Meta:
@@ -35,28 +38,25 @@ class QuestionSerializer(serializers.ModelSerializer):
 class QuizSerializer(serializers.ModelSerializer):
     questions = QuestionSerializer(many=True)
 
-    class Meta:
-        model = Quiz
-        fields = ("id", "name", "start_date", "end_date", "description", "questions")
-        read_only_fields = ("start_date",)
-
-
-class QuestionForCreateQuizSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Question
-        fields = ("id",)
-        read_only_fields = ("id",)
-
-
-class QuizCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Quiz
-        fields = "__all__"
+    def update(self, instance, validated_data):
+        instance.name = validated_data['name']
+        instance.end_date = validated_data['end_date']
+        instance.description = validated_data['description']
+        instance.save()
+        return instance
 
     def create(self, validated_data):
         object = Quiz(name=validated_data['name'], end_date=validated_data['end_date'],
                       description=validated_data['description'])
         object.save()
-        for que in validated_data['questions']:
-            object.questions.add(que)
+        for dict in validated_data['questions']:
+            question = QuestionSerializer().create(dict)
+            object.questions.add(question)
+        object.save()
         return object
+
+    class Meta:
+        model = Quiz
+        fields = ("id", "name", "start_date", "end_date", "description", "questions")
+        read_only_fields = ("start_date",)
+
