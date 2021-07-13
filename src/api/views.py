@@ -86,6 +86,10 @@ class QuizQuestionViewSet(viewsets.ModelViewSet):
         object = QuestionSerializer().create(validated_data)
         return Response(status=204)
 
+    def get_serializer_class(self):
+        if self.action == "update":
+            return QuestionUpdateSerializer
+        return QuestionSerializer
 
 class ListQuizForUserView(ListAPIView):
     queryset = Quiz.objects.filter(Q(start_date__lte=datetime.today()) & Q(end_date__gte=datetime.today()))

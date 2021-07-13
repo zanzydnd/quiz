@@ -42,6 +42,7 @@ class QuestionSerializer(serializers.ModelSerializer):
         read_only_fields = ("answer",)
 
 
+
 class QuizUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Quiz
