@@ -1,11 +1,12 @@
 import json
 from datetime import datetime
-
-from django.contrib.auth import get_user_model
+from rest_framework.permissions import IsAdminUser, AllowAny
+from django.contrib.auth import get_user_model, authenticate, login
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from rest_framework import generics
 from rest_framework import viewsets
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import RetrieveAPIView, ListAPIView, CreateAPIView
 from rest_framework.response import Response
 
@@ -21,14 +22,30 @@ def main_api_view(request):
     """Проверка работы api"""
     return Response({"status": "ok"})
 
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def authenticate_user(request):
+    username = request.data['username']
+    password = request.data['password']
+
+    lg = authenticate(username=username, password=password)
+
+    if lg is None:
+        return Response(status=401)
+    else:
+        login(request, lg)
+        return Response(status=200)
+
 
 class QuestionViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAdminUser]
     queryset = Question.objects.all()
     serializer_class = QuestionSerializer
 
 
 class QuizViewSet(viewsets.ModelViewSet):
     """Опрос"""
+    permission_classes = [IsAdminUser]
     queryset = Quiz.objects.filter(Q(start_date__lte=datetime.today()) & Q(end_date__gte=datetime.today()))
 
     def get_serializer_class(self):
@@ -36,6 +53,7 @@ class QuizViewSet(viewsets.ModelViewSet):
 
 
 class QuizQuestionViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAdminUser]
     serializer_class = QuestionSerializer
     queryset = Question.objects.all()
 
