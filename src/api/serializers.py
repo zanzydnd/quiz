@@ -12,9 +12,24 @@ class QuestionAnswerSerializer(serializers.ModelSerializer):
 class QuestionSerializer(serializers.ModelSerializer):
     answer = QuestionAnswerSerializer(many=True)
 
+    def update(self, instance, validated_data):
+        instance.text = validated_data['text']
+        instance.type = validated_data['type']
+        instance.save()
+        return instance
+
+    def create(self, validated_data):
+        object = Question(text=validated_data['text'], type=validated_data['type'])
+        object.save()
+        for answ in validated_data['answer']:
+            answer_object = QuestionAnswer(text=answ['text'], is_right=answ['is_right'], question=object)
+            answer_object.save()
+        return object
+
     class Meta:
         model = Question
         fields = ("id", "text", "type", "answer")
+        read_only_fields = ("answer",)
 
 
 class QuizSerializer(serializers.ModelSerializer):

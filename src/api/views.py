@@ -6,8 +6,8 @@ from rest_framework import viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from api.models import Quiz
-from api.serializers import QuizSerializer, QuizCreateSerializer
+from api.models import Quiz, Question
+from api.serializers import QuizSerializer, QuizCreateSerializer, QuestionSerializer
 
 
 @api_view(["GET"])
@@ -15,6 +15,10 @@ def main_api_view(request):
     """Проверка работы api"""
     return Response({"status": "ok"})
 
+
+class QuestionViewSet(viewsets.ModelViewSet):
+    queryset = Question.objects.all()
+    serializer_class = QuestionSerializer
 
 class QuizViewSet(viewsets.ModelViewSet):
     """Опрос"""
@@ -24,3 +28,15 @@ class QuizViewSet(viewsets.ModelViewSet):
         if self.action == "create":
             return QuizCreateSerializer
         return QuizSerializer
+
+
+class QuizQuestionViewSet(viewsets.ModelViewSet):
+    serializer_class = QuestionSerializer
+    queryset = Question.objects.all()
+
+    def get_queryset(self):
+        print(self.kwargs)
+        if self.kwargs.get('nested_1_pk'):
+            return Question.objects.filter(quiz=self.kwargs.get('nested_1_pk'))
+        else:
+            return super(QuizQuestionViewSet, self).get_queryset()
