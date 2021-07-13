@@ -15,7 +15,7 @@ from rest_framework.response import Response
 
 from api.models import Quiz, Question, UserAnswer
 from api.serializers import QuizSerializer, QuestionSerializer, QuizSerializerForUser, AnswerOnQuiz, \
-    AnalysisQuizSerializer, AuthSerializer
+    AnalysisQuizSerializer, AuthSerializer, QuestionUpdateSerializer, QuizUpdateSerializer
 
 User = get_user_model()
 
@@ -52,6 +52,11 @@ class QuestionViewSet(viewsets.ModelViewSet):
     queryset = Question.objects.all()
     serializer_class = QuestionSerializer
 
+    def get_serializer_class(self):
+        if self.action == "update":
+            return QuestionUpdateSerializer
+        return QuestionSerializer
+
 
 class QuizViewSet(viewsets.ModelViewSet):
     """Опрос"""
@@ -59,6 +64,8 @@ class QuizViewSet(viewsets.ModelViewSet):
     queryset = Quiz.objects.filter(Q(start_date__lte=datetime.today()) & Q(end_date__gte=datetime.today()))
 
     def get_serializer_class(self):
+        if self.action == "update":
+            return QuizUpdateSerializer
         return QuizSerializer
 
 

@@ -12,20 +12,21 @@ class AuthSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=100)
     password = serializers.CharField(max_length=100)
 
+
 class QuestionAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuestionAnswer
         fields = ("id", "text", "is_right")
 
 
+class QuestionUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Question
+        fields = ("id", "text", "type",)
+
+
 class QuestionSerializer(serializers.ModelSerializer):
     answer = QuestionAnswerSerializer(many=True)
-
-    def update(self, instance, validated_data):
-        instance.text = validated_data['text']
-        instance.type = validated_data['type']
-        instance.save()
-        return instance
 
     def create(self, validated_data):
         object = Question(text=validated_data['text'], type=validated_data['type'])
@@ -33,9 +34,6 @@ class QuestionSerializer(serializers.ModelSerializer):
         for answ in validated_data['answer']:
             answer_object = QuestionAnswer(text=answ['text'], is_right=answ['is_right'], question=object)
             answer_object.save()
-        if validated_data['quiz_id']:
-            object.quiz.add(validated_data['quiz_id'])
-            object.save()
         return object
 
     class Meta:
@@ -44,15 +42,14 @@ class QuestionSerializer(serializers.ModelSerializer):
         read_only_fields = ("answer",)
 
 
+class QuizUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Quiz
+        fields = ("id", "name", "end_date", "description")
+
+
 class QuizSerializer(serializers.ModelSerializer):
     questions = QuestionSerializer(many=True)
-
-    def update(self, instance, validated_data):
-        instance.name = validated_data['name']
-        instance.end_date = validated_data['end_date']
-        instance.description = validated_data['description']
-        instance.save()
-        return instance
 
     def create(self, validated_data):
         object = Quiz(name=validated_data['name'], end_date=validated_data['end_date'],
