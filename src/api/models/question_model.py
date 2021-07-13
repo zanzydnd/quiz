@@ -1,6 +1,8 @@
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.db import models
 
+
+User = get_user_model()
 
 class Question(models.Model):
     TEXT_ANSWER_QUESTION = 'TEXT'
@@ -14,6 +16,9 @@ class Question(models.Model):
     text = models.TextField()
     type = models.CharField(max_length=15, choices=TYPE_CHOICES, default=TEXT_ANSWER_QUESTION)
 
+    def __str__(self):
+        return self.text
+
     class Meta:
         db_table = "question"
         verbose_name = "Вопрос"
@@ -21,9 +26,12 @@ class Question(models.Model):
 
 
 class QuestionAnswer(models.Model):
-    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="answer")
     text = models.TextField()
     is_right = models.BooleanField()
+
+    def __str__(self):
+        return self.text
 
     class Meta:
         db_table = "question_answer"
@@ -36,6 +44,7 @@ class UserAnswer(models.Model):
     chosen_answer = models.ForeignKey(QuestionAnswer, on_delete=models.CASCADE, null=True)
     text = models.TextField(null=True)
     text_question = models.ForeignKey(Question, on_delete=models.CASCADE, null=True)
+
 
     class Meta:
         db_table = "user_answer"
