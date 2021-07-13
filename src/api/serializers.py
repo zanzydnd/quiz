@@ -1,6 +1,10 @@
+import json
+
+from django.contrib.auth import get_user_model
+from django.db.models import Q
 from rest_framework import serializers
 
-from api.models import Quiz, Question, QuestionAnswer
+from api.models import Quiz, Question, QuestionAnswer, UserAnswer
 
 
 class QuestionAnswerSerializer(serializers.ModelSerializer):
@@ -60,3 +64,62 @@ class QuizSerializer(serializers.ModelSerializer):
         fields = ("id", "name", "start_date", "end_date", "description", "questions")
         read_only_fields = ("start_date",)
 
+
+class QuizSerializerForUser(serializers.ModelSerializer):
+    class Meta:
+        model = Quiz
+        fields = ("id", "name", "start_date", "end_date", "description")
+
+
+class AnswerOnQuiz(serializers.ModelSerializer):
+    def validate(self, attrs):
+        if attrs['text_question'] and attrs['text_question'].type != "TEXT":
+            raise serializers.ValidationError("Isn't a text question")
+        if attrs['text_question'] and attrs['chosen_answer']:
+            raise serializers.ValidationError("You can't pick an answer for text type question.")
+        if not attrs['text_question'] and not attrs['chosen_answer']:
+            raise serializers.ValidationError("You can't send an empty answer")
+        if attrs['chosen_answer']:
+            if UserAnswer.objects.filter(
+                    Q(user=attrs['user']) & Q(chosen_answer__question=attrs['chosen_answer'].question)) and attrs[
+                'chosen_answer'].question.type != "MULTIPLE":
+                raise serializers.ValidationError("You can't answer on single question twice.")
+        return super().validate(attrs)
+
+    class Meta:
+        model = UserAnswer
+        fields = ("user", "chosen_answer", "text", "text_question")
+
+
+class QuestionAnalysisSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Question
+        fields = ("id", "text", "type")
+
+
+class AnalysisQuizSerializer(serializers.ModelSerializer):
+    answers = serializers.SerializerMethodField()
+    questions = QuestionAnalysisSerializer(many=True)
+
+    def get_answers(self, instance):
+        user = self.context['request'].user
+        list_ = []
+        user_filter = Q(user=user)
+        for question in instance.questions.all():
+            query_filter = Q(text_question=question) | Q(chosen_answer__question=question)
+            answers = UserAnswer.objects.filter(user_filter & query_filter)
+            custom_map = {}
+            custom_map["Question"] = question.text
+            answers_str = []
+            for answer in answers:
+                if answer.text:
+                    answers_str.append(answer.text)
+                else:
+                    answers_str.append(answer.chosen_answer.text)
+            custom_map['user_answers'] = answers_str
+            list_.append(custom_map)
+        return list_
+
+    class Meta:
+        model = Quiz
+        fields = (*QuizSerializer.Meta.fields, "answers")

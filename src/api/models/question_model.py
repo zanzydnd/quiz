@@ -1,8 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 
-
 User = get_user_model()
+
 
 class Question(models.Model):
     TEXT_ANSWER_QUESTION = 'TEXT'
@@ -40,11 +40,10 @@ class QuestionAnswer(models.Model):
 
 
 class UserAnswer(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    chosen_answer = models.ForeignKey(QuestionAnswer, on_delete=models.CASCADE, null=True)
-    text = models.TextField(null=True)
-    text_question = models.ForeignKey(Question, on_delete=models.CASCADE, null=True)
-
+    user = models.ForeignKey(User, on_delete=models.CASCADE,null=True,blank=True)
+    chosen_answer = models.ForeignKey(QuestionAnswer, on_delete=models.CASCADE, null=True, blank=True)
+    text = models.TextField(null=True, blank=True)
+    text_question = models.ForeignKey(Question, on_delete=models.CASCADE, null=True, blank=True)
 
     class Meta:
         db_table = "user_answer"
