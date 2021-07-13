@@ -1,5 +1,8 @@
 import json
 from datetime import datetime
+
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAdminUser, AllowAny
 from django.contrib.auth import get_user_model, authenticate, login
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -12,7 +15,7 @@ from rest_framework.response import Response
 
 from api.models import Quiz, Question, UserAnswer
 from api.serializers import QuizSerializer, QuestionSerializer, QuizSerializerForUser, AnswerOnQuiz, \
-    AnalysisQuizSerializer
+    AnalysisQuizSerializer, AuthSerializer
 
 User = get_user_model()
 
@@ -22,6 +25,13 @@ def main_api_view(request):
     """Проверка работы api"""
     return Response({"status": "ok"})
 
+
+@swagger_auto_schema(
+    method="post",
+    request_body=AuthSerializer,
+    operation_summary="Authentication",
+    responses={200: "authenticated"},
+)
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def authenticate_user(request):
@@ -34,7 +44,7 @@ def authenticate_user(request):
         return Response(status=401)
     else:
         login(request, lg)
-        return Response(status=200)
+        return Response(status=200, data={200: "authenticated"})
 
 
 class QuestionViewSet(viewsets.ModelViewSet):
@@ -58,7 +68,6 @@ class QuizQuestionViewSet(viewsets.ModelViewSet):
     queryset = Question.objects.all()
 
     def get_queryset(self):
-        print(self.kwargs)
         if self.kwargs.get('nested_1_pk'):
             return Question.objects.filter(quiz=self.kwargs.get('nested_1_pk'))
         else:

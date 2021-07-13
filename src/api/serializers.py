@@ -2,10 +2,15 @@ import json
 
 from django.contrib.auth import get_user_model
 from django.db.models import Q
+from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 
 from api.models import Quiz, Question, QuestionAnswer, UserAnswer
 
+
+class AuthSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=100)
+    password = serializers.CharField(max_length=100)
 
 class QuestionAnswerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -101,6 +106,7 @@ class AnalysisQuizSerializer(serializers.ModelSerializer):
     answers = serializers.SerializerMethodField()
     questions = QuestionAnalysisSerializer(many=True)
 
+    @swagger_serializer_method(serializer_or_field=serializers.JSONField(help_text="Ответы пользователя на вопросы"))
     def get_answers(self, instance):
         user = self.context['request'].user
         list_ = []
